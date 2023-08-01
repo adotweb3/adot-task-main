@@ -1,14 +1,14 @@
 #Provide the taskId if you are updating the task
-task_id: '4UYDF7JjsHwxTQWS5yNTDLyywgjhFNoyKcTwtkbcDRVR'
+task_id: ''
 # Name and desciption of your task
-task_name: 'Twitter Crawler v3'
-task_description: 'Crawls for all tweets with #koii and stores them on IPFS.'
+task_name: 'Adot Crawler'
+task_description: 'This task volunteers your  Twitter account to crawl twitter to get results for term 'adot_web3''
 
 # network value can be DEVELOPMENT , ARWEAVE or IPFS
 task_executable_network: 'IPFS'
 
 # Provide your web3.storage key as it is needed for uploading your metadata
-secret_web3_storage_key: ''
+secret_web3_storage_key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkaWQ6ZXRocjoweDA1YTMwNmRiMjdjRkE5ZjdCMTA0Q2M1QmY3MjkwNUM3ODkzNzkyYWQiLCJpc3MiOiJ3ZWIzLXN0b3JhZ2UiLCJpYXQiOjE2ODkwNTE5MDMzNTksIm5hbWUiOiJUd2l0dGVyICJ9.q0ZdXUW7LmBGUHQ16nXUEYum2sxaU4iagN4tdUBuPg8'
 
 # last deploy : date: 2021-05-10T12:00:00.000Z
 # Task Id: 4UYDF7JjsHwxTQWS5yNTDLyywgjhFNoyKcTwtkbcDRVR

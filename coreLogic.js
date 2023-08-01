@@ -8,8 +8,6 @@ class CoreLogic {
     this.twitterTask = null;
   }
 
-  // Testing this push
-
   async task() {
     // we will work to create a proof that can be submitted to K2 to claim rewards
     let proof_cid;
