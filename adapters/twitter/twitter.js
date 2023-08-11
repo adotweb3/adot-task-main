@@ -246,17 +246,53 @@ class Twitter extends Adapter {
     await this.page.goto(url);
     await this.page.waitForTimeout(2000);
 
-    console.log('PARSE: ' + url);
+    // console.log('PARSE: ' + url);
+    const tweets_id = url.match(/status\/(\d+)/)[1];
     const html = await this.page.content();
     const $ = cheerio.load(html);
     let data = {};
     var count = 0;
 
+
     const articles = $('article[data-testid="tweet"]').toArray();
 
     const el = articles[0];
-    const tweet_text = $(el).find('div[data-testid="tweetText"]').text();
-    const tweet_user = $(el).find('a[tabindex="-1"]').text();
+    const screen_name = $(el).find('a[tabindex="-1"]').text();
+    const allText = $(el).find('a[role="link"]').text();
+    const user_name = allText.split('@')[0];
+    console.log('user_name', user_name);
+    const user_url =
+      'https://twitter.com' + $(el).find('a[role="link"]').attr('href');
+    const user_img = $(el).find('img[draggable="true"]').attr('src');
+
+    const tweet_text = $(el)
+      .find('div[data-testid="tweetText"]')
+      .first()
+      .text();
+
+    const outerMediaElements = $(el).find('div[data-testid="tweetText"] a');
+
+    const outer_media_urls = [];
+    const outer_media_short_urls = [];
+
+    outerMediaElements.each(function () {
+      const fullURL = $(this).attr('href');
+      const shortURL = $(this).text().replace(/\s/g, '');
+
+      // Ignore URLs containing "/search?q=" or "twitter.com"
+      if (
+        fullURL &&
+        !fullURL.includes('/search?q=') &&
+        !fullURL.includes('twitter.com') &&
+        !fullURL.includes('/hashtag/')
+      ) {
+        outer_media_urls.push(fullURL);
+        outer_media_short_urls.push(shortURL);
+      }
+    });
+
+    const timeRaw = $(el).find('time').attr('datetime');
+    const time = await this.convertToTimestamp(timeRaw);
     const tweet_record = $(el).find(
       'span[data-testid="app-text-transition-container"]',
     );
@@ -264,14 +300,22 @@ class Twitter extends Adapter {
     const likeCount = tweet_record.eq(1).text();
     const shareCount = tweet_record.eq(2).text();
     const viewCount = tweet_record.eq(3).text();
-    if (tweet_user && tweet_text) {
+    if (screen_name && tweet_text) {
       data = {
-        user: tweet_user,
-        content: tweet_text.replace(/\n/g, '<br>'),
+        user_name: user_name,
+        screen_name: screen_name,
+        user_url: user_url,
+        user_img: user_img,
+        tweets_id: tweets_id,
+        tweets_url: url,
+        tweets_content: tweet_text.replace(/\n/g, '<br>'),
+        time: time,
         comment: commentCount,
         like: likeCount,
         share: shareCount,
         view: viewCount,
+        outer_media_url: outer_media_urls,
+        outer_media_short_url: outer_media_short_urls,
       };
     }
     // TODO  - queue users to be crawled?
@@ -289,6 +333,12 @@ class Twitter extends Adapter {
     }
 
     return data;
+  };
+
+
+  convertToTimestamp = async dateString => {
+    const date = new Date(dateString);
+    return Math.floor(date.getTime() / 1000);
   };
 
   /**
