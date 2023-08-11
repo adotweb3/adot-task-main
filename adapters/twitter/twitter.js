@@ -3,9 +3,9 @@ const Adapter = require('../../model/adapter');
 const puppeteer = require('puppeteer');
 const PCR = require('puppeteer-chromium-resolver');
 const cheerio = require('cheerio');
-var crypto = require('crypto');
 const { Web3Storage, File } = require('web3.storage');
 const Data = require('../../model/data');
+const fs = require('fs');
 
 /**
  * Twitter
@@ -210,7 +210,9 @@ class Twitter extends Adapter {
           return null;
         } else {
           const file = await makeFileFromObjectWithName(data, 'round:' + round);
-          const cid = await storeFiles([file]);
+          // TEST USE
+          // const cid = await storeFiles([file]);
+          const cid = "cid"
 
           await this.proofs.create({
             id: 'proof:' + round,
@@ -370,7 +372,9 @@ class Twitter extends Adapter {
         console.log('got tweet item', data);
 
         const file = await makeFileFromObjectWithName(data, url);
-        const cid = await storeFiles([file]);
+        // TEST USE
+        // const cid = await storeFiles([file]);
+        const cid = "cid"
         this.cids.create({
           id: url,
           round: round || 0,
@@ -463,7 +467,7 @@ async function makeFileFromObjectWithName(obj, name) {
   console.log('making file from', typeof obj, name);
   obj.url = name;
   const buffer = Buffer.from(JSON.stringify(obj));
-  console.log('buffer is', buffer);
+  // console.log('buffer is', buffer);
   return new File([buffer], 'data.json', { type: 'application/json' });
 }
 
