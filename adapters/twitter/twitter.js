@@ -311,7 +311,8 @@ class Twitter extends Adapter {
         tweets_id: tweets_id,
         tweets_url: url,
         tweets_content: tweet_text.replace(/\n/g, '<br>'),
-        time: time,
+        time_post: time,
+        time_read: Date.now(),
         comment: commentCount,
         like: likeCount,
         share: shareCount,
@@ -377,6 +378,7 @@ class Twitter extends Adapter {
         const cid = "cid"
         this.cids.create({
           id: url,
+          timestamp: data.time_read,
           round: round || 0,
           cid: cid,
         });
