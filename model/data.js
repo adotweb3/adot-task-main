@@ -30,15 +30,34 @@ class Data {
   }
 
   /**
-   * create
+   * create and insert an item into the database
+   * Old items with the lower timestamp will be removed
    * @param {*} item 
    * @returns {void}
    */
   async create(item) {
     try {
+      const existingItem = await this.getItem(item);
+      console.log('get item', existingItem);
+  
+      if (existingItem) {
+        if (
+          !existingItem.timestamp ||
+          (item.timestamp && item.timestamp > existingItem.timestamp)
+        ) {
+          // Remove the old item with the same ID
+          await this.db.remove({ id: item.id }, {});
+          console.log('Old item removed');
+        } else {
+          console.log('New item has a lower or equal timestamp; ignoring');
+          return undefined;
+        }
+      }
+  
       await this.db.insert(item);
+      console.log('Item inserted', item);
     } catch (e) {
-      console.error(e.key, e.errorType);
+      console.error(e);
       return undefined;
     }
   }
@@ -50,11 +69,12 @@ class Data {
    * @description gets an item from the database by ID (CID)
    */
   async getItem(item) {
-    console.log('trying to retrieve with ID', item);
+    console.log('trying to retrieve with ID', item.id);
     try {
-      const resp = await this.db.findOne({ item });
+      const resp = await this.db.find({ id: item.id });
+      // console.log('resp is ', resp);
       if (resp) {
-        return resp.item;
+        return resp;
       } else {
         return null;
       }
