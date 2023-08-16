@@ -244,11 +244,10 @@ class Twitter extends Adapter {
 
     await this.page.setViewport({ width: 1920, height: 10000 });
 
-    console.log('PARSE: ' + url, query);
     await this.page.goto(url);
     await this.page.waitForTimeout(2000);
 
-    // console.log('PARSE: ' + url);
+    console.log('PARSE: ' + url);
     const tweets_id = url.match(/status\/(\d+)/)[1];
     const html = await this.page.content();
     const $ = cheerio.load(html);
