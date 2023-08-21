@@ -4,6 +4,10 @@ const {
   namespaceWrapper,
   taskNodeAdministered,
 } = require('./namespaceWrapper');
+const TwitterTask = require('./twitter-task');
+const twitterTaskInstance = new TwitterTask(async() => {
+  return 1;
+}, 1); 
 
 
 /**
@@ -57,7 +61,7 @@ if (app) {
   app.use('/api/', require('./routes') );
 
   app.get('/query', (req, res) => {
-    
-    res.status(200).json({ status: 'ok' });
+    const searchTerm = twitterTaskInstance.searchTerm; 
+    res.status(200).json({ status: 'ok', searchTerm: searchTerm });
   });
 }

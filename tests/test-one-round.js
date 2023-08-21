@@ -11,7 +11,7 @@ const run = async () => {
 
     twitterTask = await new TwitterTask (async() => {
         return round;
-    });
+    }, round);
     console.log('started a new crawler at round', round);
         
 

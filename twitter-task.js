@@ -4,6 +4,7 @@ const { Web3Storage } = require('web3.storage');
 const Data = require('./model/data');
 const dotenv = require('dotenv');
 const { default: axios } = require('axios');
+const { namespaceWrapper } = require('./namespaceWrapper');
 dotenv.config();
 
 /**
@@ -35,13 +36,10 @@ class TwitterTask {
     this.round = round;
     this.lastRoundCheck = Date.now();
     this.isRunning = false;
-    this.searchTerm = ['adot_web3', 'koii', 'Arweave'];
+    // this.searchTerm = ['adot_web3', 'koii', 'Arweave'];
     this.adapter = null;
+    this.initialize();
 
-    this.initialize = async () => {
-      this.searchTerm = await fetchSearchTerm();
-    }
-    
     this.setAdapter = async ( ) => {
       const username = process.env.TWITTER_USERNAME;
       const password = process.env.TWITTER_PASSWORD;
@@ -69,17 +67,53 @@ class TwitterTask {
     this.start();
   }
 
+  async initialize() {
+    console.log('initializing twitter task')
+    this.searchTerm = await this.fetchSearchTerms();
+  }
+
   /**
    * fetchSearchTerms
    * @description return the search terms to use for the crawler
    * @returns {array} - an array of search terms
    */
   async fetchSearchTerms() {
-    const response = await fetch('YOUR_API_ENDPOINT_HERE');
-    const data = await response.json();
-    
-    return data;
-  }
+    // const nodeList = await namespaceWrapper.getNodes();
+    // TEST USE
+    const nodeList = [1,2,3,4]
+    console.log('nodeList', nodeList);
+
+    // If the list has fewer than 2 nodes, return all terms
+    if (nodeList.length < 2) {
+        return ['adot_web3', 'koii', 'Arweave'];
+    }
+
+    let termCounts = {
+        'adot_web3': 3,
+        'koii': 3,
+        'Arweave': 3
+    };
+
+    // Fetch the term for each node and update the counts
+    // for (let node of nodeList) {
+    //     let response = await axios.get(node.endpoint); // Assuming the endpoint is in node.endpoint
+    //     let term = response.data; // Adjust based on the structure of your response
+
+    //     if (termCounts.hasOwnProperty(term)) {
+    //         termCounts[term]++;
+    //     }
+    // }
+
+    // Find the terms with the lowest count
+    let minValue = Math.min(...Object.values(termCounts));
+    let leastFrequentTerms = Object.keys(termCounts).filter(term => termCounts[term] === minValue);
+
+    // Randomly pick one of the least frequent terms
+    let randomTerm = leastFrequentTerms[Math.floor(Math.random() * leastFrequentTerms.length)];
+
+    return [randomTerm];
+}
+
 
   /**
    * strat
@@ -206,8 +240,6 @@ class TwitterTask {
     return true
 
   }
-
-
 } 
 
 module.exports = TwitterTask;
