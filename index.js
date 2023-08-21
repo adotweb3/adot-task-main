@@ -55,4 +55,9 @@ if (app) {
     res.status(200).json({ taskState: state });
   });
   app.use('/api/', require('./routes') );
+
+  app.get('/query', (req, res) => {
+    
+    res.status(200).json({ status: 'ok' });
+  });
 }

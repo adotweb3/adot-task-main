@@ -35,8 +35,13 @@ class TwitterTask {
     this.round = round;
     this.lastRoundCheck = Date.now();
     this.isRunning = false;
-    this.searchTerm = 'adot_web3';
+    this.searchTerm = ['adot_web3', 'koii', 'Arweave'];
     this.adapter = null;
+
+    this.initialize = async () => {
+      this.searchTerm = await fetchSearchTerm();
+    }
+    
     this.setAdapter = async ( ) => {
       const username = process.env.TWITTER_USERNAME;
       const password = process.env.TWITTER_PASSWORD;
@@ -65,6 +70,18 @@ class TwitterTask {
   }
 
   /**
+   * fetchSearchTerms
+   * @description return the search terms to use for the crawler
+   * @returns {array} - an array of search terms
+   */
+  async fetchSearchTerms() {
+    const response = await fetch('YOUR_API_ENDPOINT_HERE');
+    const data = await response.json();
+    
+    return data;
+  }
+
+  /**
    * strat
    * @description starts the crawler
    * 
@@ -78,21 +95,26 @@ class TwitterTask {
 
     this.isRunning = true;
 
-    let query = {
-      limit: 100,
-      searchTerm: this.searchTerm,
-      query: `https://twitter.com/search?q=${this.searchTerm}&src=typed_query`,
-      depth: 3,
-      updateRound: async () => {
-        return this.updateRound()
-      },
-      recursive: true,
-      round: this.round
+    let limitPerTerm = Math.floor(100 / this.searchTerm.length);
+
+     for (let term of this.searchTerm) {
+        let query = {
+            limit: limitPerTerm,
+            searchTerm: term,
+            query: `https://twitter.com/search?q=${term}&src=typed_query`,
+            depth: 3,
+            updateRound: async () => {
+                return this.updateRound();
+            },
+            recursive: true,
+            round: this.round
+        }
+        await this.adapter.crawl(query);
     }
-  
-    this.adapter.crawl(query); // let it ride
     
   }
+
+
 
   /**
    * stop

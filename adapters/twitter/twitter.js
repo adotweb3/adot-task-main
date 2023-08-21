@@ -355,21 +355,20 @@ class Twitter extends Adapter {
     console.log(`about to crawl ${this.toCrawl.length} items`);
     this.parsed = [];
 
-    console.log(
-      'test',
-      this.parsed.length < query.limit,
-      this.parsed.length,
-      query.limit,
-    );
-
-    while (this.parsed.length < query.limit && !this.break) {
+    while (Object.keys(this.parsed).length < query.limit && !this.break) {
+      console.log(
+        'test',
+        Object.keys(this.parsed).length < query.limit,
+        Object.keys(this.parsed).length,
+        query.limit,
+      );
       let round = await query.updateRound();
       const url = this.toCrawl.shift();
       if (url) {
         var data = await this.parseItem(url, query);
         this.parsed[url] = data;
 
-        console.log('got tweet item', data);
+        // console.log('got tweet item', data);
 
         const file = await makeFileFromObjectWithName(data, url);
         // TEST USE
@@ -382,12 +381,13 @@ class Twitter extends Adapter {
           cid: cid,
         });
 
-        if (query.recursive === true) {
-          const newLinks = await this.fetchList(url);
-          this.toCrawl = this.toCrawl.concat(newLinks);
-        }
+        // if (query.recursive === true) {
+        //   const newLinks = await this.fetchList(url);
+        //   this.toCrawl = this.toCrawl.concat(newLinks);
+        // }
       }
     }
+    return;
   };
 
   /**
