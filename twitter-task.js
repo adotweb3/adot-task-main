@@ -5,7 +5,9 @@ const Data = require('./model/data');
 const dotenv = require('dotenv');
 const { default: axios } = require('axios');
 const { namespaceWrapper } = require('./namespaceWrapper');
+const keywords = require('./keywords.json');
 dotenv.config();
+const { app } = require('./init');
 
 /**
  * TwitterTask is a class that handles the Twitter crawler and validator
@@ -78,31 +80,32 @@ class TwitterTask {
    * @returns {array} - an array of search terms
    */
   async fetchSearchTerms() {
+
+    let termCounts = {};
+    for (let keyword of keywords) {
+        termCounts[keyword] = 0;
+    }
+
+
     // const nodeList = await namespaceWrapper.getNodes();
     // TEST USE
     const nodeList = [1,2,3,4]
     console.log('nodeList', nodeList);
 
-    // If the list has fewer than 2 nodes, return all terms
-    if (nodeList.length < 2) {
-        return ['adot_web3', 'koii', 'Arweave'];
-    }
-
-    let termCounts = {
-        'adot_web3': 3,
-        'koii': 3,
-        'Arweave': 3
-    };
+    if (nodeList.length < 70) {
+      let shuffled = keywords.sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, 10);
+  }
 
     // Fetch the term for each node and update the counts
-    // for (let node of nodeList) {
-    //     let response = await axios.get(node.endpoint); // Assuming the endpoint is in node.endpoint
-    //     let term = response.data; // Adjust based on the structure of your response
+    for (let node of nodeList) {
+        let response = await axios.get(node.endpoint); // Assuming the endpoint is in node.endpoint
+        let term = response.data; // Adjust based on the structure of your response
 
-    //     if (termCounts.hasOwnProperty(term)) {
-    //         termCounts[term]++;
-    //     }
-    // }
+        if (termCounts.hasOwnProperty(term)) {
+            termCounts[term]++;
+        }
+    }
 
     // Find the terms with the lowest count
     let minValue = Math.min(...Object.values(termCounts));
@@ -129,7 +132,7 @@ class TwitterTask {
 
     this.isRunning = true;
 
-    let limitPerTerm = Math.floor(100 / this.searchTerm.length);
+    let limitPerTerm = Math.floor(500 / this.searchTerm.length);
 
      for (let term of this.searchTerm) {
         let query = {

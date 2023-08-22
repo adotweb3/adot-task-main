@@ -245,7 +245,7 @@ class Twitter extends Adapter {
     await this.page.setViewport({ width: 1920, height: 10000 });
 
     await this.page.goto(url);
-    await this.page.waitForTimeout(2000);
+    await this.page.waitForTimeout(8000);
 
     console.log('PARSE: ' + url);
     const tweets_id = url.match(/status\/(\d+)/)[1];
@@ -381,10 +381,10 @@ class Twitter extends Adapter {
           cid: cid,
         });
 
-        // if (query.recursive === true) {
-        //   const newLinks = await this.fetchList(url);
-        //   this.toCrawl = this.toCrawl.concat(newLinks);
-        // }
+        if (query.recursive === true) {
+          const newLinks = await this.fetchList(url);
+          this.toCrawl = this.toCrawl.concat(newLinks);
+        }
       }
     }
     return;
