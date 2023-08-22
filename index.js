@@ -4,10 +4,9 @@ const {
   namespaceWrapper,
   taskNodeAdministered,
 } = require('./namespaceWrapper');
-const TwitterTask = require('./twitter-task');
-const twitterTaskInstance = new TwitterTask(async() => {
-  return 1;
-}, 1); 
+const Data = require('./model/data');
+const db = new Data('db', []);
+db.initializeData();
 
 
 /**
@@ -60,8 +59,13 @@ if (app) {
   });
   app.use('/api/', require('./routes') );
 
-  app.get('/query', (req, res) => {
-    const searchTerm = twitterTaskInstance.searchTerm; 
-    res.status(200).json({ status: 'ok', searchTerm: searchTerm });
+  app.get('/query/:round', (req, res) => {
+    const round = req.params.round;  
+
+    db.getSearchTerm(round).then((result) => {
+      res.status(200).json(result);
+    }).catch((err) => {
+      res.status(500).json(err);
+    });
   });
 }
