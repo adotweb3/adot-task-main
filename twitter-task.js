@@ -91,9 +91,9 @@ class TwitterTask {
       termCounts[keyword] = 0;
     }
 
-    // const nodeList = await namespaceWrapper.getNodes();
+    const nodeList = await namespaceWrapper.getNodes();
     // TEST USE
-    const nodeList = [1, 2, 3, 4];
+    // const nodeList = [1, 2, 3, 4];
     console.log('nodeList', nodeList);
 
     if (nodeList.length < 70) {

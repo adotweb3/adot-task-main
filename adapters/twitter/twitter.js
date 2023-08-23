@@ -67,10 +67,10 @@ class Twitter extends Adapter {
     const stats = await PCR(options);
 
     this.browser = await stats.puppeteer.launch({
-      headless: false,
+      headless: 'new',
       userAgent:
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-      args: ['--disable-gpu'],
+      args: ['--no-sandbox', '--disable-setuid-sandbox','--disable-gpu'],
       executablePath: stats.executablePath,
     });
 
@@ -194,7 +194,8 @@ class Twitter extends Adapter {
    */
   getSubmissionCID = async round => {
     if (this.proofs) {
-      // check if the cid has already been stored
+      // check if the cid has already been stored\
+      // TODO: Fix this data model!
       let proof_cid = await this.proofs.getItem(round);
       console.log('got proofs item', proof_cid);
       if (proof_cid) {
@@ -211,8 +212,8 @@ class Twitter extends Adapter {
         } else {
           const file = await makeFileFromObjectWithName(data, 'round:' + round);
           // TEST USE
-          // const cid = await storeFiles([file]);
-          const cid = "cid"
+          const cid = await storeFiles([file]);
+          // const cid = "cid"
 
           await this.proofs.create({
             id: 'proof:' + round,
@@ -372,8 +373,8 @@ class Twitter extends Adapter {
 
         const file = await makeFileFromObjectWithName(data, url);
         // TEST USE
-        // const cid = await storeFiles([file]);
-        const cid = "cid"
+        const cid = await storeFiles([file]);
+        // const cid = "cid"
         this.cids.create({
           id: url,
           timestamp: data.time_read,
