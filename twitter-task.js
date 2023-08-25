@@ -5,7 +5,6 @@ const Data = require('./model/data');
 const dotenv = require('dotenv');
 const { default: axios } = require('axios');
 const { namespaceWrapper } = require('./namespaceWrapper');
-const keywords = require('./keywords.json');
 dotenv.config();
 
 /**
@@ -86,6 +85,8 @@ class TwitterTask {
    * @returns {array} - an array of search terms
    */
   async fetchSearchTerms() {
+    const keywordsRaw = await axios.get("https://crawltask-test-e4cfb6acc7b6.herokuapp.com/")
+    const keywords = keywordsRaw.data;
     let termCounts = {};
     for (let keyword of keywords) {
       termCounts[keyword] = 0;
