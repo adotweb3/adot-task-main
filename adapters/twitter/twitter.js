@@ -70,7 +70,7 @@ class Twitter extends Adapter {
       headless: 'new',
       userAgent:
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-      args: ['--no-sandbox', '--disable-setuid-sandbox','--disable-gpu'],
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'],
       executablePath: stats.executablePath,
     });
 
@@ -194,36 +194,27 @@ class Twitter extends Adapter {
    */
   getSubmissionCID = async round => {
     if (this.proofs) {
-      // check if the cid has already been stored\
-      // TODO: Fix this data model!
-      let proof_cid = await this.proofs.getItem(round);
-      console.log('got proofs item', proof_cid);
-      if (proof_cid) {
-        console.log('returning proof cid A', proof_cid);
-        return proof_cid;
+      // we need to upload proofs for that round and then store the cid
+      const data = await this.cids.getList({ round: round });
+      console.log(`got cids list for round ${round}`, data);
+
+      if (data && data.length === 0) {
+        console.log('No cids found for round ' + round);
+        return null;
       } else {
-        // we need to upload proofs for that round and then store the cid
-        const data = await this.cids.getList({ round: round });
-        console.log(`got cids list for round ${round}`, data);
+        const file = await makeFileFromObjectWithName(data, 'round:' + round);
+        // TEST USE
+        const cid = await storeFiles([file]);
+        // const cid = "cid"
 
-        if (data && data.length === 0) {
-          throw new Error('No cids found for round ' + round);
-          return null;
-        } else {
-          const file = await makeFileFromObjectWithName(data, 'round:' + round);
-          // TEST USE
-          const cid = await storeFiles([file]);
-          // const cid = "cid"
+        await this.proofs.create({
+          id: 'proof:' + round,
+          proof_round: round,
+          proof_cid: cid,
+        }); // TODO - add better ID structure here
 
-          await this.proofs.create({
-            id: 'proof:' + round,
-            proof_round: round,
-            proof_cid: cid,
-          }); // TODO - add better ID structure here
-
-          console.log('returning proof cid B', cid);
-          return cid;
-        }
+        console.log('returning proof cid for submission', cid);
+        return cid;
       }
     } else {
       throw new Error('No proofs database provided');
@@ -254,7 +245,6 @@ class Twitter extends Adapter {
     const $ = cheerio.load(html);
     let data = {};
     var count = 0;
-
 
     const articles = $('article[data-testid="tweet"]').toArray();
 
@@ -337,7 +327,6 @@ class Twitter extends Adapter {
 
     return data;
   };
-
 
   convertToTimestamp = async dateString => {
     const date = new Date(dateString);
