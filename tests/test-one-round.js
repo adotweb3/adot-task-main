@@ -5,20 +5,20 @@ const TwitterTask = require('../twitter-task');
 // warning, this doesn't really work that well, but it's a start
 
 const run = async () => {
-    let delay = 60000;
+    let delay = 1000;
     var twitterTask = null;
-    let round = 4;
+    let round = 1;
 
     twitterTask = await new TwitterTask (async() => {
         return round;
-    });
+    }, round);
     console.log('started a new crawler at round', round);
         
 
     setTimeout(async ()  =>   {
         console.log('stopping crawler at round', round)
         twitterTask.stop(); // unclear whether stop works
-        let proof_cid = await twitterTask.getRoundCID(round-1);
+        let proof_cid = await twitterTask.getRoundCID(round);
         console.log('got round result', proof_cid);
         let output = await twitterTask.validate(proof_cid, round);
         console.log('validated round result', output);

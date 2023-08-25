@@ -1,0 +1,69 @@
+# Name and metadata of your task
+task_name: "Adot Crawler v0.2.0"
+author: "Dongyue"
+description: "This task volunteers your  Twitter account to crawl twitter to get results."
+repositoryUrl: "https://github.com/somali0128/steam-doodle"
+imageUrl: "https://bafybeia7anj5fgnstqlqwglehxoeq7yviczei3u24gvas7tjqrmt2g7e2m.ipfs.w3s.link/soma.jpeg"
+
+# network value can be DEVELOPMENT , ARWEAVE or IPFS, Recommended IPFS as the cli automatically takes care of uploading the executable with the help of web3.js key
+task_executable_network: "IPFS"
+
+# Path to your executable webpack if the selected network is IPFS otherwise leave blank
+task_audit_program: "dist/main.js"
+
+# Total round time of your task : it must be given in slots and each slot is rougly equal to 4ms
+round_time: 600
+
+audit_window: 200
+submission_window: 200
+
+# Amounts in KOII
+
+minimum_stake_amount: 0.01
+
+# total_bounty_amount cannot be grater than bounty_amount_per_round
+# total bounty is not accepted in case of update task
+total_bounty_amount: 10
+
+bounty_amount_per_round: 1
+
+#Number of times allowed to re-submit the distribution  list in case the distribution list is audited
+allowed_failed_distributions: 3
+
+#Space in MBs for the account size, that holds the task data
+space: 5
+
+# Note that the value field in RequirementTag is optional, so it is up to you to include it or not based on your use case.
+# To add more global variables and task variables, please refer the type,value,description format shown below
+
+requirementsTags:
+  - type: TASK_VARIABLE
+    value: 'WEB3STORAGE_TOKEN'
+    description: 'Used to upload data to IPFS - get 1GB for free at https://web3.storage/'
+  - type: TASK_VARIABLE
+    value: 'TWITTER_USERNAME'
+    description: 'The username of your volunteer Twitter account.'
+  - type: TASK_VARIABLE
+    value: 'TWITTER_PASSWORD'
+    description: 'The password of your volunteer Twitter account.'
+  - type: CPU
+    value: '4-core'
+  - type: RAM
+    value: '5 GB'
+  - type: STORAGE
+    value: 'Some'
+  - type: NETWORK
+    value: 'Fast'
+  - type: ARCHITECTURE
+    value: 'AMD'
+  - type: OS
+    value: 'OSX'
+
+# OPTIONAL variables below 
+
+# OPTIONAL Only provide the taskId if you are updating the task otherwise leave blank
+task_id: "9THp2pJvG2djammApm84B9F6UbtEXJ8d2kqa1Rh7QX8j"
+
+
+# Provide the description for changes made in new version of task
+migrationDescription: 'Update DB function'

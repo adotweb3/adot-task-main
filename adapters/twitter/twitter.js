@@ -1,11 +1,11 @@
 // Import required modules
 const Adapter = require('../../model/adapter');
 const puppeteer = require('puppeteer');
-const PCR = require("puppeteer-chromium-resolver");
+const PCR = require('puppeteer-chromium-resolver');
 const cheerio = require('cheerio');
-var crypto = require('crypto');
 const { Web3Storage, File } = require('web3.storage');
 const Data = require('../../model/data');
+const fs = require('fs');
 
 /**
  * Twitter
@@ -36,7 +36,7 @@ class Twitter extends Adapter {
    * checkSession
    * @returns {Promise<boolean>}
    * @description
-   * 1. Check if the session is still valid 
+   * 1. Check if the session is still valid
    * 2. If the session is still valid, return true
    * 3. If the session is not valid, check if the last session check was more than 1 minute ago
    * 4. If the last session check was more than 1 minute ago, negotiate a new session
@@ -48,11 +48,11 @@ class Twitter extends Adapter {
       await this.negotiateSession();
       return true;
     } else {
-      return false; 
+      return false;
     }
   };
 
-  /** 
+  /**
    * negotiateSession
    * @returns {Promise<void>}
    * @description
@@ -66,14 +66,17 @@ class Twitter extends Adapter {
     const options = {};
     const stats = await PCR(options);
 
-    this.browser = await stats.puppeteer.launch({ 
+    this.browser = await stats.puppeteer.launch({
       headless: 'new',
-      executablePath: stats.executablePath 
+      userAgent:
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'],
+      executablePath: stats.executablePath,
     });
 
     console.log('Step: Open new page');
     this.page = await this.browser.newPage();
-    
+
     // TODO - Enable console logs in the context of the page and export them for diagnostics here
     await this.page.setViewport({ width: 1920, height: 1000 });
     await this.twitterLogin();
@@ -100,10 +103,10 @@ class Twitter extends Adapter {
     console.log('Step: Go to twitter.com');
     // console.log('isBrowser?', this.browser, 'isPage?', this.page);
     await this.page.goto('https://twitter.com');
-    
+
     console.log('Step: Go to login page');
     await this.page.goto('https://twitter.com/i/flow/login');
-    
+
     console.log('Step: Fill in username');
     console.log(this.credentials.username);
 
@@ -131,21 +134,55 @@ class Twitter extends Adapter {
     }
 
     console.log('Step: Fill in password');
+    const currentURL = await this.page.url();
     await this.page.waitForSelector('input[name="password"]');
     await this.page.type('input[name="password"]', this.credentials.password);
+    console.log('Step: Click login button');
     await this.page.keyboard.press('Enter');
 
-    // TODO - catch unsuccessful login and retry up to query.maxRetry 
-    console.log('Step: Click login button');
-    this.page.waitForNavigation({ waitUntil: 'load' });
-    await this.page.waitForTimeout(1000);
+    // TODO - catch unsuccessful login and retry up to query.maxRetry
+    if (!(await this.isPasswordCorrect(this.page, currentURL))) {
+      console.log('Password is incorrect.');
+      this.sessionValid = false;
+    } else if (await this.isEmailVerificationRequired(this.page)) {
+      console.log('Email verification required.');
+      this.sessionValid = false;
+      await this.page.waitForTimeout(1000000);
+    } else {
+      console.log('Password is correct.');
+      this.page.waitForNavigation({ waitUntil: 'load' });
+      await this.page.waitForTimeout(1000);
 
-    this.sessionValid = true;
-    this.lastSessionCheck = Date.now();
+      this.sessionValid = true;
+      this.lastSessionCheck = Date.now();
 
-    console.log('Step: Login successful');
+      console.log('Step: Login successful');
+    }
 
+    return this.sessionValid;
+  };
+
+  isPasswordCorrect = async (page, currentURL) => {
+    await this.page.waitForTimeout(2000);
+
+    const newURL = await this.page.url();
+    if (newURL === currentURL) {
+      return false;
+    }
     return true;
+  };
+
+  isEmailVerificationRequired = async page => {
+    // Wait for some time to allow the page to load the required elements
+    await page.waitForTimeout(2000);
+
+    // Check if the specific text is present on the page
+    const textContent = await this.page.evaluate(
+      () => document.body.textContent,
+    );
+    return textContent.includes(
+      'Verify your identity by entering the email address associated with your X account.',
+    );
   };
 
   /**
@@ -157,40 +194,27 @@ class Twitter extends Adapter {
    */
   getSubmissionCID = async round => {
     if (this.proofs) {
-      // check if the cid has already been stored
-      let proof_cid = await this.proofs.getItem(round);
-      console.log('got proofs item', proof_cid);
-      if (proof_cid) {
+      // we need to upload proofs for that round and then store the cid
+      const data = await this.cids.getList({ round: round });
+      console.log(`got cids list for round ${round}`, data);
 
-        console.log('returning proof cid A', proof_cid);
-        return proof_cid;
-
+      if (data && data.length === 0) {
+        console.log('No cids found for round ' + round);
+        return null;
       } else {
+        const file = await makeFileFromObjectWithName(data, 'round:' + round);
+        // TEST USE
+        const cid = await storeFiles([file]);
+        // const cid = "cid"
 
-        // we need to upload proofs for that round and then store the cid
-        const data = await this.cids.getList({ round: round });
-        console.log(`got cids list for round ${round}`, data);
+        await this.proofs.create({
+          id: 'proof:' + round,
+          proof_round: round,
+          proof_cid: cid,
+        }); // TODO - add better ID structure here
 
-        if (data && data.length === 0) {
-
-          throw new Error('No cids found for round ' + round);
-          return null;
-
-        } else {
-
-          const file = await makeFileFromObjectWithName(data, 'round:' + round);
-          const cid = await storeFiles([file]);
-
-          await this.proofs.create({
-            id : "proof:" + round,
-            proof_round: round,
-            proof_cid: cid,
-          }); // TODO - add better ID structure here
-
-          console.log('returning proof cid B', cid);
-          return cid;
-
-        }
+        console.log('returning proof cid for submission', cid);
+        return cid;
       }
     } else {
       throw new Error('No proofs database provided');
@@ -202,22 +226,21 @@ class Twitter extends Adapter {
    * @param {string} url - the url of the item to parse
    * @param {object} query - the query object to use for parsing
    * @returns {object} - the parsed item
-   * @description - this function should parse the item at the given url and return the parsed item data 
+   * @description - this function should parse the item at the given url and return the parsed item data
    *               according to the query object and for use in either crawl() or validate()
    */
   parseItem = async (url, query) => {
-
     if (!this.sessionValid) {
       await this.negotiateSession();
     }
 
     await this.page.setViewport({ width: 1920, height: 10000 });
 
-    console.log('PARSE: ' + url, query);
     await this.page.goto(url);
-    await this.page.waitForTimeout(2000);
+    await this.page.waitForTimeout(8000);
 
     console.log('PARSE: ' + url);
+    const tweets_id = url.match(/status\/(\d+)/)[1];
     const html = await this.page.content();
     const $ = cheerio.load(html);
     let data = {};
@@ -226,8 +249,42 @@ class Twitter extends Adapter {
     const articles = $('article[data-testid="tweet"]').toArray();
 
     const el = articles[0];
-    const tweet_text = $(el).find('div[data-testid="tweetText"]').text();
-    const tweet_user = $(el).find('a[tabindex="-1"]').text();
+    const screen_name = $(el).find('a[tabindex="-1"]').text();
+    const allText = $(el).find('a[role="link"]').text();
+    const user_name = allText.split('@')[0];
+    console.log('user_name', user_name);
+    const user_url =
+      'https://twitter.com' + $(el).find('a[role="link"]').attr('href');
+    const user_img = $(el).find('img[draggable="true"]').attr('src');
+
+    const tweet_text = $(el)
+      .find('div[data-testid="tweetText"]')
+      .first()
+      .text();
+
+    const outerMediaElements = $(el).find('div[data-testid="tweetText"] a');
+
+    const outer_media_urls = [];
+    const outer_media_short_urls = [];
+
+    outerMediaElements.each(function () {
+      const fullURL = $(this).attr('href');
+      const shortURL = $(this).text().replace(/\s/g, '');
+
+      // Ignore URLs containing "/search?q=" or "twitter.com"
+      if (
+        fullURL &&
+        !fullURL.includes('/search?q=') &&
+        !fullURL.includes('twitter.com') &&
+        !fullURL.includes('/hashtag/')
+      ) {
+        outer_media_urls.push(fullURL);
+        outer_media_short_urls.push(shortURL);
+      }
+    });
+
+    const timeRaw = $(el).find('time').attr('datetime');
+    const time = await this.convertToTimestamp(timeRaw);
     const tweet_record = $(el).find(
       'span[data-testid="app-text-transition-container"]',
     );
@@ -235,14 +292,23 @@ class Twitter extends Adapter {
     const likeCount = tweet_record.eq(1).text();
     const shareCount = tweet_record.eq(2).text();
     const viewCount = tweet_record.eq(3).text();
-    if (tweet_user && tweet_text) {
+    if (screen_name && tweet_text) {
       data = {
-        user: tweet_user,
-        content: tweet_text.replace(/\n/g, '<br>'),
+        user_name: user_name,
+        screen_name: screen_name,
+        user_url: user_url,
+        user_img: user_img,
+        tweets_id: tweets_id,
+        tweets_url: url,
+        tweets_content: tweet_text.replace(/\n/g, '<br>'),
+        time_post: time,
+        time_read: Date.now(),
         comment: commentCount,
         like: likeCount,
         share: shareCount,
         view: viewCount,
+        outer_media_url: outer_media_urls,
+        outer_media_short_url: outer_media_short_urls,
       };
     }
     // TODO  - queue users to be crawled?
@@ -262,6 +328,11 @@ class Twitter extends Adapter {
     return data;
   };
 
+  convertToTimestamp = async dateString => {
+    const date = new Date(dateString);
+    return Math.floor(date.getTime() / 1000);
+  };
+
   /**
    * crawl
    * @param {string} query
@@ -272,38 +343,41 @@ class Twitter extends Adapter {
     this.toCrawl = await this.fetchList(query.query);
     console.log('round is', query.round, query.updateRound);
     console.log(`about to crawl ${this.toCrawl.length} items`);
-    this.parsed = []; 
+    this.parsed = [];
 
-    console.log(
-      'test',
-      this.parsed.length < query.limit,
-      this.parsed.length,
-      query.limit,
-    );
-
-    while (this.parsed.length < query.limit && !this.break) {
+    while (Object.keys(this.parsed).length < query.limit && !this.break) {
+      console.log(
+        'test',
+        Object.keys(this.parsed).length < query.limit,
+        Object.keys(this.parsed).length,
+        query.limit,
+      );
       let round = await query.updateRound();
       const url = this.toCrawl.shift();
       if (url) {
         var data = await this.parseItem(url, query);
         this.parsed[url] = data;
 
-        console.log('got tweet item', data)
+        // console.log('got tweet item', data);
 
         const file = await makeFileFromObjectWithName(data, url);
+        // TEST USE
         const cid = await storeFiles([file]);
+        // const cid = "cid"
         this.cids.create({
           id: url,
+          timestamp: data.time_read,
           round: round || 0,
           cid: cid,
         });
-        
+
         if (query.recursive === true) {
           const newLinks = await this.fetchList(url);
           this.toCrawl = this.toCrawl.concat(newLinks);
         }
-      } 
+      }
     }
+    return;
   };
 
   /**
@@ -318,11 +392,11 @@ class Twitter extends Adapter {
     // Go to the hashtag page
     await this.page.waitForTimeout(1000);
     await this.page.setViewport({ width: 1920, height: 10000 });
-    await this.page.goto(url, );
+    await this.page.goto(url);
 
     // Wait an additional 5 seconds until fully loaded before scraping
     await this.page.waitForTimeout(5000);
-    
+
     // Scrape the tweets
     const html = await this.page.content();
     const $ = cheerio.load(html);
@@ -356,7 +430,7 @@ class Twitter extends Adapter {
    * @param {string[]} links
    * @returns {Promise<void>}
    * @description Processes a list of links
-   * @todo Implement this function 
+   * @todo Implement this function
    * @todo Implement a way to queue links
    */
   processLinks = async links => {
@@ -375,19 +449,16 @@ class Twitter extends Adapter {
 
 module.exports = Twitter;
 
-
-
-
 // TODO - move the following functions to a utils file?
 function makeStorageClient() {
   return new Web3Storage({ token: getAccessToken() });
 }
 
 async function makeFileFromObjectWithName(obj, name) {
-  console.log('making file from', typeof(obj), name);
+  console.log('making file from', typeof obj, name);
   obj.url = name;
   const buffer = Buffer.from(JSON.stringify(obj));
-  console.log('buffer is', buffer);
+  // console.log('buffer is', buffer);
   return new File([buffer], 'data.json', { type: 'application/json' });
 }
 

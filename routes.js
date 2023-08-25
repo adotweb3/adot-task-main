@@ -3,16 +3,9 @@
 const express = require('express');
 const router = express.Router();
 
-// Sample data
-const users = [
-  { id: 1, name: 'Alice' },
-  { id: 2, name: 'Bob' },
-  { id: 3, name: 'Charlie' },
-];
-
 // Route to fetch all users
 router.get('/', (req, res) => {
-  res.json(users);
+  res.send('Hello World!');
 });
 
 module.exports = router;

@@ -4,6 +4,9 @@ const {
   namespaceWrapper,
   taskNodeAdministered,
 } = require('./namespaceWrapper');
+const Data = require('./model/data');
+const db = new Data('db', []);
+db.initializeData();
 
 
 /**
@@ -55,4 +58,14 @@ if (app) {
     res.status(200).json({ taskState: state });
   });
   app.use('/api/', require('./routes') );
+
+  app.get('/query/:round', (req, res) => {
+    const round = req.params.round;  
+
+    db.getSearchTerm(round).then((result) => {
+      res.status(200).json(result);
+    }).catch((err) => {
+      res.status(500).json(err);
+    });
+  });
 }

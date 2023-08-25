@@ -36,14 +36,9 @@ class CoreLogic {
    * @param {string} round
    * @returns {string} cid
    */
-  async fetchSubmission() {
+  async fetchSubmission(round) {
     console.log('fetchSubmission called');
-    let round = await namespaceWrapper.getRound() 
-    let lastRound = round - 1;
-
-    if ( lastRound < 0 ) lastRound = 0;
-
-    const cid = await this.twitterTask.getRoundCID(lastRound);
+    const cid = await this.twitterTask.getRoundCID(round);
 
     console.log('about to make submission with CID: ', cid);
 
@@ -269,7 +264,7 @@ class CoreLogic {
         await namespaceWrapper.getSlot(),
         'current slot while calling submit',
       );
-      const submission = await this.fetchSubmission();
+      const submission = await this.fetchSubmission(roundNumber);
       console.log('SUBMISSION', submission);
       await namespaceWrapper.checkSubmissionAndUpdateRound(
         submission,
