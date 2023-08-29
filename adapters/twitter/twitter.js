@@ -78,7 +78,7 @@ class Twitter extends Adapter {
     this.page = await this.browser.newPage();
 
     // TODO - Enable console logs in the context of the page and export them for diagnostics here
-    await this.page.setViewport({ width: 1920, height: 1000 });
+    await this.page.setViewport({ width: 1920, height: 25000 });
     await this.twitterLogin();
 
     return true;
@@ -171,7 +171,10 @@ class Twitter extends Adapter {
     }
     return true;
   };
-
+        // if (query.recursive === true) {
+        //   const newLinks = await this.fetchList(url);
+        //   this.toCrawl = this.toCrawl.concat(newLinks);
+        // }
   isEmailVerificationRequired = async page => {
     // Wait for some time to allow the page to load the required elements
     await page.waitForTimeout(2000);
@@ -211,7 +214,7 @@ class Twitter extends Adapter {
           id: 'proof:' + round,
           proof_round: round,
           proof_cid: cid,
-        }); // TODO - add better ID structure here
+        }); 
 
         console.log('returning proof cid for submission', cid);
         return cid;
@@ -371,10 +374,10 @@ class Twitter extends Adapter {
           cid: cid,
         });
 
-        if (query.recursive === true) {
-          const newLinks = await this.fetchList(url);
-          this.toCrawl = this.toCrawl.concat(newLinks);
-        }
+        // if (query.recursive === true) {
+        //   const newLinks = await this.fetchList(url);
+        //   this.toCrawl = this.toCrawl.concat(newLinks);
+        // }
       }
     }
     return;
