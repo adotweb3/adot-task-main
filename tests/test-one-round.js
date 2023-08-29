@@ -5,7 +5,7 @@ const TwitterTask = require('../twitter-task');
 // warning, this doesn't really work that well, but it's a start
 
 const run = async () => {
-    let delay = 1000;
+    let delay = 10000000;
     var twitterTask = null;
     let round = 1;
 
