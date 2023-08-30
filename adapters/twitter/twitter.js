@@ -67,7 +67,7 @@ class Twitter extends Adapter {
     const stats = await PCR(options);
 
     this.browser = await stats.puppeteer.launch({
-      headless: 'new',
+      headless: false,
       userAgent:
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'],
@@ -147,7 +147,7 @@ class Twitter extends Adapter {
     } else if (await this.isEmailVerificationRequired(this.page)) {
       console.log('Email verification required.');
       this.sessionValid = false;
-      await this.page.waitForTimeout(1000000);
+      await this.page.waitForTimeout(1000);
     } else {
       console.log('Password is correct.');
       this.page.waitForNavigation({ waitUntil: 'load' });
@@ -348,7 +348,7 @@ class Twitter extends Adapter {
     console.log(`about to crawl ${this.toCrawl.length} items`);
     this.parsed = [];
 
-    while (Object.keys(this.parsed).length < query.limit && !this.break) {
+    while (Object.keys(this.parsed).length < query.limit && !this.break || Object.keys(this.parsed).length === this.toCrawl.length) {
       console.log(
         'test',
         Object.keys(this.parsed).length < query.limit,

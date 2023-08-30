@@ -85,19 +85,28 @@ class TwitterTask {
    * @returns {array} - an array of search terms
    */
   async fetchSearchTerms() {
-    const keywordsRaw = await axios.get("https://crawltask-test-e4cfb6acc7b6.herokuapp.com/")
-    const keywords = keywordsRaw.data;
-    let termCounts = {};
-    for (let keyword of keywords) {
-      termCounts[keyword] = 0;
+    let keywords;
+
+    try {
+      const response = await axios.get(
+        'https://crawltask-test-e4cfb6acc7b6.herokuapp.com/',
+      );
+      keywords = response.data;
+    } catch (error) {
+      console.error(
+        'Error fetching data from the URL. Falling back to local JSON data.',
+        error,
+      );
+      keywords = require('./keywords.json'); // Load local JSON data
     }
 
-    //TODO Update nodeList function
-    const nodeList = [];
+    let termCounts = {};
+    for (let keyword of keywords) {
+      let encodedKeyword = encodeURIComponent(keyword);
+      termCounts[encodedKeyword] = 0;
+    }
 
-    console.log('nodeList', nodeList);
-
-    let shuffled = keywords.sort(() => 0.5 - Math.random());
+    let shuffled = Object.keys(termCounts).sort(() => 0.5 - Math.random());
     return shuffled.slice(0, 10);
   }
 
@@ -121,7 +130,7 @@ class TwitterTask {
       let query = {
         limit: limitPerTerm,
         searchTerm: term,
-        query: `https://twitter.com/search?q=${term}&src=typed_query`,
+        query: `https://twitter.com/search?f=top&q=${term}%20-filter%3Areplies&src=typed_query`,
         depth: 3,
         updateRound: async () => {
           return this.updateRound();
