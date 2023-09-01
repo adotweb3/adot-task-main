@@ -147,7 +147,7 @@ class Twitter extends Adapter {
     } else if (await this.isEmailVerificationRequired(this.page)) {
       console.log('Email verification required.');
       this.sessionValid = false;
-      await this.page.waitForTimeout(1000000);
+      await this.page.waitForTimeout(1000);
     } else {
       console.log('Password is correct.');
       this.page.waitForNavigation({ waitUntil: 'load' });
@@ -348,7 +348,7 @@ class Twitter extends Adapter {
     console.log(`about to crawl ${this.toCrawl.length} items`);
     this.parsed = [];
 
-    while (Object.keys(this.parsed).length < query.limit && !this.break) {
+    while (Object.keys(this.parsed).length < query.limit && !this.break || Object.keys(this.parsed).length === this.toCrawl.length) {
       console.log(
         'test',
         Object.keys(this.parsed).length < query.limit,
