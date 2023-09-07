@@ -1,4 +1,4 @@
-# Twitter Crawler
+# Adot Task
 
 **Not for illegal use**
 
@@ -33,15 +33,16 @@ The repo also contains a host of test files, most importantly `test/test-one-rou
 
 Run the test with 
 ```
-yarn
-node test/test-one-round.js
+yarn or npm install
+yarn test or npm run test
 ```
 
 ## Using The Crawler
 To modify the crawler query, or change how it uses the local database, open `twitter-task.js`.
 
 The `query` object manages the key parts of the crawler.
-```
+
+```javascript
 let searchTerm = "#koii";
 let query = {
     limit: 100, // total number of records to return
@@ -55,14 +56,16 @@ let query = {
 ```
 
 ## Modifying the Task
-Check `task-config.yaml` for the deployment config. 
+Check `config-task.yaml` for the deployment config. Check [here](https://docs.koii.network/develop/command-line-tool/create-task-cli#using-config-yml) for more information on the config file.
 
 ## Deploying to Koii
-Use the `create-task-cli` to build and deploy your task. 
+Use the `create-task-cli` to build and deploy your task. Check [here](https://docs.koii.network/develop/command-line-tool/create-task-cli) for more information on the cli.
 
-```
-yarn webpack #builds your task executable
-npx @_koii/create-task-cli@latest #uploads your task executable to IPFS and starts it on Koii
+```bash
+ #uploads your task executable to IPFS and starts it on Koii Node
+npx @_koii/create-task-cli@latest
 ```
 
-For a longer demo and more information please see https://blog.koii.network/How-to-deploy-a-koii-task-in-less-than-5mins/
+## Running on Koii Node
+
+After deploying your task, you can run it on the Koii Node with your task ID. Check [here](https://docs.koii.network/run-a-node/task-nodes/how-to-run-a-koii-node) for more information about the how to install and run the Koii Node.
