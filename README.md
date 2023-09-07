@@ -43,7 +43,7 @@ To modify the crawler query, or change how it uses the local database, open `twi
 The `query` object manages the key parts of the crawler.
 
 ```javascript
-let searchTerm = "#koii";
+let searchTerm = "#web3";
 let query = {
     limit: 100, // total number of records to return
     searchTerm: searchTerm, // the keyword to look for
