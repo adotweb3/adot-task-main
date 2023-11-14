@@ -1,7 +1,6 @@
 const { namespaceWrapper } = require('./namespaceWrapper');
 const TwitterTask = require('./twitter-task');
-const { LAMPORTS_PER_SOL } = require("@_koi/web3.js");
-
+const { LAMPORTS_PER_SOL } = require('@_koi/web3.js');
 
 class CoreLogic {
   constructor() {
@@ -16,17 +15,19 @@ class CoreLogic {
 
     // the following function starts the crawler if not already started, or otherwise fetches a submission CID for a particular round
     let round = await namespaceWrapper.getRound();
-    if ( !this.twitterTask || !this.twitterTask.isRunning ) {
+    if (!this.twitterTask || !this.twitterTask.isRunning) {
       try {
-        this.twitterTask = await new TwitterTask (namespaceWrapper.getRound, round);
+        this.twitterTask = await new TwitterTask(
+          namespaceWrapper.getRound,
+          round,
+        );
         console.log('started a new crawler at round', round);
       } catch (e) {
         console.log('error starting crawler', e);
       }
-    
     } else {
       console.log('crawler already running at round', round);
-    } 
+    }
   }
 
   /**
@@ -43,13 +44,12 @@ class CoreLogic {
     console.log('about to make submission with CID: ', cid);
 
     return cid;
-
   }
 
   /**
    * generateDistributionList
-   * @param {*} round 
-   * @param {*} _dummyTaskState 
+   * @param {*} round
+   * @param {*} _dummyTaskState
    * @description This function is called by the Koi core to generate the distribution list
    *             before the node makes it's submission to claim rewards at the end of each round
    *            The distribution list is a JSON object with the following structure:
@@ -59,7 +59,7 @@ class CoreLogic {
    *          "address3": 0.3,
    *         "address4": 0.4
    *        } where each address is the address of a validator node and the value is the percentage of the reward that the node will receive
-   * @returns 
+   * @returns
    */
   async generateDistributionList(round, _dummyTaskState) {
     try {
@@ -71,19 +71,22 @@ class CoreLogic {
       /*  **** SAMPLE LOGIC FOR GENERATING DISTRIBUTION LIST ******/
 
       let distributionList = {};
+      let distributionCandidates = [];
       let taskAccountDataJSON = await namespaceWrapper.getTaskState();
       if (taskAccountDataJSON == null) taskAccountDataJSON = _dummyTaskState;
       const submissions = taskAccountDataJSON.submissions[round];
       const submissions_audit_trigger =
         taskAccountDataJSON.submissions_audit_trigger[round];
       if (submissions == null) {
-        console.log('No submisssions found in N-2 round');
+        console.log(`No submisssions found in round ${round}`);
         return distributionList;
       } else {
         const keys = Object.keys(submissions);
         const values = Object.values(submissions);
         const size = values.length;
         console.log('Submissions from last round: ', keys, values, size);
+
+        // Logic for slashing the stake of the candidate who has been audited and found to be false
         for (let i = 0; i < size; i++) {
           const candidatePublicKey = keys[i];
           if (
@@ -91,32 +94,56 @@ class CoreLogic {
             submissions_audit_trigger[candidatePublicKey]
           ) {
             console.log(
-              submissions_audit_trigger[candidatePublicKey].votes,
               'distributions_audit_trigger votes ',
+              submissions_audit_trigger[candidatePublicKey].votes,
             );
             const votes = submissions_audit_trigger[candidatePublicKey].votes;
-            let numOfVotes = 0;
-            for (let index = 0; index < votes.length; index++) {
-              if (votes[index].is_valid) numOfVotes++;
-              else numOfVotes--;
+            if (votes.length === 0) {
+              // slash 70% of the stake as still the audit is triggered but no votes are casted
+              // Note that the votes are on the basis of the submission value
+              // to do so we need to fetch the stakes of the candidate from the task state
+              const stake_list = taskAccountDataJSON.stake_list;
+              const candidateStake = stake_list[candidatePublicKey];
+              const slashedStake = candidateStake * 0.7;
+              distributionList[candidatePublicKey] = -slashedStake;
+              console.log('Candidate Stake', candidateStake);
+            } else {
+              let numOfVotes = 0;
+              for (let index = 0; index < votes.length; index++) {
+                if (votes[index].is_valid) numOfVotes++;
+                else numOfVotes--;
+              }
+
+              if (numOfVotes < 0) {
+                // slash 70% of the stake as the number of false votes are more than the number of true votes
+                // Note that the votes are on the basis of the submission value
+                // to do so we need to fetch the stakes of the candidate from the task state
+                const stake_list = taskAccountDataJSON.stake_list;
+                const candidateStake = stake_list[candidatePublicKey];
+                const slashedStake = candidateStake * 0.7;
+                distributionList[candidatePublicKey] = -slashedStake;
+                console.log('Candidate Stake', candidateStake);
+              }
+
+              if (numOfVotes > 0) {
+                distributionCandidates.push(candidatePublicKey);
+              }
             }
-            if (numOfVotes < 0) continue;
+          } else {
+            distributionCandidates.push(candidatePublicKey);
           }
-
-          // now we need to parse the value submitted and decide how much to pay
-          let cid = values[i].submission_value;
-          console.log(`about to fetch ${cid} from IPFS`)
-          // let ipfs_object = this.twitterTask.getJSONofCID(cid);
-          // if (ipfs_object == null || !ipfs_object) {
-          //   distributionList[candidatePublicKey] = 0;
-          // } else {
-          //   if (ipfs_object.length == null || ipfs_object.length < 1) ipfs_object.length = 1;
-          //   let score = ipfs_object.length * 0.1; // multiply total records submitted by value per record (0.1 KOII)
-          //   distributionList[candidatePublicKey] = score;
-          // }
-
-          distributionList[candidatePublicKey] = 1 * LAMPORTS_PER_SOL;
         }
+      }
+
+      // now distribute the rewards based on the valid submissions
+      // Here it is assumed that all the nodes doing valid submission gets the same reward
+
+      const reward =
+        Math.ceil(taskAccountDataJSON.bounty_amount_per_round /
+        distributionCandidates.length);
+      console.log('REWARD RECEIVED BY EACH NODE', reward);
+      for (let i = 0; i < distributionCandidates.length; i++) {
+        distributionList[distributionCandidates[i]] = reward;
       }
       console.log('Distribution List', distributionList);
       return distributionList;
@@ -130,7 +157,7 @@ class CoreLogic {
    * @description This function is called by the Koi core to submit the distribution list
    *             after the node makes it's submission to claim rewards at the end of each round
    * @param {*} distributionList // must be populated by generateDistributionList
-   * @param {*} round 
+   * @param {*} round
    * @returns
    * @memberof Node
    */
@@ -162,11 +189,11 @@ class CoreLogic {
    * validateNode
    * @description This function is called auditSubmission() to validate the submission value
    *           submitted by the node at the end of each round, and uses the more extensive
-   *         validation logic in twitter-task.js to determine if the node is eligible for rewards  
+   *         validation logic in twitter-task.js to determine if the node is eligible for rewards
    * @param {*} submission_value
-   * @param {*} submission_value 
-   * @param {*} round 
-   * @returns 
+   * @param {*} submission_value
+   * @param {*} round
+   * @returns
    */
   async validateNode(submission_value, round) {
     return await this.twitterTask.validate(submission_value, round);
@@ -175,10 +202,10 @@ class CoreLogic {
   /**
    * shallowEqual
    * @description This function is called by the Koi core to compare the submission values
-   * 
-   * @param {*} object1 
-   * @param {*} object2 
-   * @returns 
+   *
+   * @param {*} object1
+   * @param {*} object2
+   * @returns
    */
   async shallowEqual(object1, object2) {
     const keys1 = Object.keys(object1);
@@ -196,7 +223,7 @@ class CoreLogic {
 
   /**
    * validateDistribution
-   * @description This function is called by the Koi core to validate the distribution list 
+   * @description This function is called by the Koi core to validate the distribution list
    *              and piggybacks off of generateDistributionList
    * @param {*} distributionListSubmitter
    * @param {*} round
@@ -248,12 +275,12 @@ class CoreLogic {
     //   return false;
     // }
   };
-  
+
   /**
    * submitTask
    * @description This function is called by the Koi core to submit the submission value
    *             at the end of each round
-   * @param {*} roundNumber 
+   * @param {*} roundNumber
    * @returns Promise<void>
    */
   async submitTask(roundNumber) {
@@ -304,7 +331,7 @@ class CoreLogic {
    * @returns Promise<void>
    * @memberof Node
    */
-  
+
   async auditDistribution(roundNumber) {
     console.log('auditDistribution called with round', roundNumber);
     await namespaceWrapper.validateAndVoteOnDistributionList(
