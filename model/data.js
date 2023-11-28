@@ -30,24 +30,24 @@ class Data {
   }
 
   /**
-   * create and insert an item into the database
-   * Old items with the lower timestamp will be removed
+   * create
    * @param {*} item
    * @returns {void}
    */
   async create(item) {
     try {
       const existingItem = await this.getItem(item);
-      console.log('get item', existingItem);
+      // console.log('get item', existingItem);
 
       if (existingItem) {
         if (
-          !existingItem.timestamp ||
-          (item.timestamp && item.timestamp > existingItem.timestamp)
+          !existingItem[0].timestamp ||
+          (item.timestamp && item.timestamp > existingItem[0].timestamp)
         ) {
           // Remove the old item with the same ID
           await this.db.remove({ id: item.id }, {});
-          console.log('Old item removed');
+          // console.log('Old item removed');
+          this.db.compactDatafile();
         } else {
           console.log('New item has a lower or equal timestamp; ignoring');
           return undefined;
@@ -55,7 +55,7 @@ class Data {
       }
 
       await this.db.insert(item);
-      console.log('Item inserted', item);
+      // console.log('Item inserted', item);
     } catch (e) {
       console.error(e);
       return undefined;
@@ -69,11 +69,11 @@ class Data {
    * @description gets an item from the database by ID (CID)
    */
   async getItem(item) {
-    console.log('trying to retrieve with ID', item.id);
+    // console.log('trying to retrieve with ID', item.id);
     try {
       const resp = await this.db.find({ id: item.id });
       // console.log('resp is ', resp);
-      if (resp) {
+      if (resp.length !== 0) {
         return resp;
       } else {
         return null;
@@ -94,57 +94,51 @@ class Data {
   async getList(options) {
     // doesn't support options or rounds yet?
     let itemListRaw;
-    if (!options) {
-      itemListRaw = await this.db.find({ item: { $exists: true } });
-    } else {
-      if (options.round) {
-        console.log('has round', options.round);
-        // itemListRaw = await this.db.find({ item: { $exists: true } });
-        itemListRaw = await this.db.find({ round: options.round });
-      }
-    }
-    // let itemList = itemListRaw.map(itemList => itemList.item);
+    console.log('has round', options.round);
+    // itemListRaw = await this.db.find({ item: { $exists: true } });
+    itemListRaw = await this.db.find({ round: options.round });
+
     return itemListRaw;
   }
 
-  /**
+    /**
    * createSearchTerm
    * @description creates a search term for the database
    */
-  async createSearchTerm(searchTerms, round) {
-    try {
-      const objToInsert = {
-        termRound: round,
-        terms: searchTerms,
-      };
-      await this.db.insert(objToInsert);
-      console.log('Search terms inserted for round', round);
-    } catch (e) {
-      console.error(e);
-      return undefined;
-    }
-  }
-
-  /**
-   * getSearchTerm
-   * @description gets a search term from the database
-   */
-  async getSearchTerm(round) {
-    try {
-      console.log('trying to retrieve search term for round', round);
-      const resp = await this.db.find({"termRound": parseInt(round)});
-      console.log('resp is ', resp)
-      // Check if resp has content and return accordingly
-      if (resp && resp.length > 0) {
-        return resp[0].terms; // Assuming you want the 'terms' array from the first matching record
+    async createSearchTerm(searchTerms, round) {
+      try {
+        const objToInsert = {
+          termRound: round,
+          terms: searchTerms,
+        };
+        await this.db.insert(objToInsert);
+        console.log('Search terms inserted for round', round);
+      } catch (e) {
+        console.error(e);
+        return undefined;
       }
-
-      return null; // Return null if no results or empty results
-    } catch (e) {
-      console.error('Error retrieving searchTerm for round:', round, e);
-      return null;
     }
-  }
+  
+    /**
+     * getSearchTerm
+     * @description gets a search term from the database
+     */
+    async getSearchTerm(round) {
+      try {
+        console.log('trying to retrieve search term for round', round);
+        const resp = await this.db.find({"termRound": parseInt(round)});
+        console.log('resp is ', resp)
+        // Check if resp has content and return accordingly
+        if (resp && resp.length > 0) {
+          return resp[0].terms; // Assuming you want the 'terms' array from the first matching record
+        }
+  
+        return null; // Return null if no results or empty results
+      } catch (e) {
+        console.error('Error retrieving searchTerm for round:', round, e);
+        return null;
+      }
+    }
 }
 
 module.exports = Data;

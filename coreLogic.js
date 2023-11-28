@@ -7,26 +7,16 @@ class CoreLogic {
     this.twitterTask = null;
   }
 
-  async task() {
-    // we will work to create a proof that can be submitted to K2 to claim rewards
-    let proof_cid;
-
-    // in order for this proof to withstand scrutiny (see validateNode, below, for audit flow) the proof must be generated from a full round of valid work
-
-    // the following function starts the crawler if not already started, or otherwise fetches a submission CID for a particular round
-    let round = await namespaceWrapper.getRound();
-    if (!this.twitterTask || !this.twitterTask.isRunning) {
-      try {
-        this.twitterTask = await new TwitterTask(
-          namespaceWrapper.getRound,
-          round,
-        );
-        console.log('started a new crawler at round', round);
-      } catch (e) {
-        console.log('error starting crawler', e);
-      }
-    } else {
-      console.log('crawler already running at round', round);
+  async task(roundNumber) {
+    console.log('Main task called with round', roundNumber);
+    try {
+      this.twitterTask = await new TwitterTask(
+        roundNumber,
+        roundNumber,
+      );
+      console.log('started a new crawler at round', roundNumber);
+    } catch (e) {
+      console.log('error starting crawler', e);
     }
   }
 
@@ -37,9 +27,10 @@ class CoreLogic {
    * @param {string} round
    * @returns {string} cid
    */
-  async fetchSubmission(round) {
+  async fetchSubmission(roundNumber) {
     console.log('fetchSubmission called');
-    const cid = await this.twitterTask.getRoundCID(round);
+
+    const cid = await this.twitterTask.getRoundCID(roundNumber);
 
     console.log('about to make submission with CID: ', cid);
 
@@ -139,8 +130,8 @@ class CoreLogic {
       // Here it is assumed that all the nodes doing valid submission gets the same reward
 
       const reward =
-        Math.ceil(taskAccountDataJSON.bounty_amount_per_round /
-        distributionCandidates.length);
+        taskAccountDataJSON.bounty_amount_per_round /
+        distributionCandidates.length;
       console.log('REWARD RECEIVED BY EACH NODE', reward);
       for (let i = 0; i < distributionCandidates.length; i++) {
         distributionList[distributionCandidates[i]] = reward;
@@ -195,9 +186,9 @@ class CoreLogic {
    * @param {*} round
    * @returns
    */
-  async validateNode(submission_value, round) {
+  validateNode = async (submission_value, round) => {
     return await this.twitterTask.validate(submission_value, round);
-  }
+  };
 
   /**
    * shallowEqual
