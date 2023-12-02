@@ -2,7 +2,7 @@
 task_name: 'Adot Crawler v0.3'
 author: 'Soma'
 description: 'Please try to avoid running this with the Twitter Crawler task at the same time. This task volunteers your Twitter account to crawl twitter to get results. The data are then stored in IPFS and will be used by the Adot to collect the results.'
-repositoryUrl: 'https://github.com/koii-network/task-examples'
+repositoryUrl: 'https://github.com/koii-network/adot-task-main'
 imageUrl: 'imageUrl'
 
 # network value can be DEVELOPMENT , ARWEAVE or IPFS, Recommended IPFS when deploying to testnet as the cli automatically takes care of uploading the executable with the help of web3.js key
