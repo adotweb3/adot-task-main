@@ -86,6 +86,9 @@ class Twitter extends Adapter {
       });
       console.log('Step: Open new page');
       this.page = await this.browser.newPage();
+      await this.page.setUserAgent(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      );
       await this.page.setViewport({ width: 1920, height: 1080 });
       await this.twitterLogin();
       this.w3sKey = await getAccessToken();
