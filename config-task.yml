@@ -1,5 +1,5 @@
 # Name and metadata of your task
-task_name: 'Adot Crawler v0.3'
+task_name: 'Adot Crawler v0.3.2'
 author: 'Soma'
 description: 'Please try to avoid running this with the Twitter Crawler task at the same time. This task volunteers your Twitter account to crawl twitter to get results. The data are then stored in IPFS and will be used by the Adot to collect the results.'
 repositoryUrl: 'https://github.com/koii-network/adot-task-main'
@@ -57,7 +57,7 @@ requirementsTags:
 # OPTIONAL variables variables for creating task / REQUIRED variables for update task
 
 # OPTIONAL Only provide the taskId if you are updating the task otherwise leave blank
-task_id: 'AiF3o8jc69W6Smp3BDVwoRSJt1H2TQ5y9hXa61Quofh8'
+task_id: '4PVySyL2wsHfchjDfv9kdmcFE6j9WtschYytkeEdmyoM'
 
 # Provide the description for changes made in new version of task
-migrationDescription: 'Release v0.3.1 of the Adot Crawler task. Fix a bug Mac user cannot run the task properly. This version use Spheron to store the data fetched from Twitter. Also the task is more stable and can get more data in fewer minutes.'
+migrationDescription: 'Release v0.3.2 of the Adot Crawler task. Fix a bug Mac user cannot run the task properly. This version use Spheron to store the data fetched from Twitter. Also the task is more stable and can get more data in fewer minutes.'
