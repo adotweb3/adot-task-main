@@ -163,7 +163,7 @@ class Twitter extends Adapter {
       // TODO - catch unsuccessful login and retry up to query.maxRetry
       if (!(await this.isPasswordCorrect(this.page, currentURL))) {
         console.log('Password is incorrect or email verfication needed.');
-        await this.page.waitForTimeout(2000);
+        await this.page.waitForTimeout(5000);
         this.sessionValid = false;
       } else if (await this.isEmailVerificationRequired(this.page)) {
         console.log('Email verification required.');
@@ -172,7 +172,7 @@ class Twitter extends Adapter {
       } else {
         console.log('Password is correct.');
         this.page.waitForNavigation({ waitUntil: 'load' });
-        await this.page.waitForTimeout(1000);
+        await this.page.waitForTimeout(5000);
 
         this.sessionValid = true;
         this.lastSessionCheck = Date.now();
@@ -189,7 +189,7 @@ class Twitter extends Adapter {
   };
 
   isPasswordCorrect = async (page, currentURL) => {
-    await this.page.waitForTimeout(2000);
+    await this.page.waitForTimeout(5000);
 
     const newURL = await this.page.url();
     if (newURL === currentURL) {
@@ -200,7 +200,7 @@ class Twitter extends Adapter {
 
   isEmailVerificationRequired = async page => {
     // Wait for some time to allow the page to load the required elements
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(5000);
 
     // Check if the specific text is present on the page
     const textContent = await this.page.evaluate(
@@ -368,16 +368,13 @@ class Twitter extends Adapter {
    * @description Crawls the queue of known links
    */
   crawl = async query => {
-    while (true) {
-      console.log('valid? ', this.sessionValid);
-      if (this.sessionValid == true) {
-        this.searchTerm = query.searchTerm;
-        this.round = query.round;
-        await this.fetchList(query.query, query.round);
-        await new Promise(resolve => setTimeout(resolve, 300000)); // If the error message is found, wait for 5 minutes, refresh the page, and continue
-      } else {
-        await this.negotiateSession();
-      }
+    console.log('valid? ', this.sessionValid);
+    if (this.sessionValid == true) {
+      this.searchTerm = query.searchTerm;
+      this.round = query.round;
+      await this.fetchList(query.query, query.round);
+    } else {
+      await this.negotiateSession();
     }
   };
 
@@ -391,7 +388,7 @@ class Twitter extends Adapter {
     try {
       console.log('fetching list for ', url);
       // Go to the hashtag page
-      await this.page.waitForTimeout(1000);
+      await this.page.waitForTimeout(5000);
       await this.page.setViewport({ width: 1024, height: 4000 });
       await this.page.goto(url);
 
@@ -457,13 +454,14 @@ class Twitter extends Adapter {
           // );
           if (this.round !== (await namespaceWrapper.getRound())) {
             console.log('round changed, closed old browser');
+            this.browser.close();
             break;
           }
           // Scroll the page for next batch of elements
           await this.scrollPage(this.page);
 
           // Optional: wait for a moment to allow new elements to load
-          await this.page.waitForTimeout(1000);
+          await this.page.waitForTimeout(5000);
 
           // Refetch the elements after scrolling
           await this.page.evaluate(() => {
@@ -474,15 +472,15 @@ class Twitter extends Adapter {
         }
         // If the error message is found, wait for 2 minutes, refresh the page, and continue
         if (errorMessage) {
-          console.log('Rate limit reach, waiting for 5 minutes...');
-          this.sessionValid = false;
+          console.log('Rate limit reach, waiting for next round...');
+          this.browser.close();
           break;
         }
       }
       return;
     } catch (e) {
       console.log('Last round fetching list stop', e);
-      this.sessionValid = false;
+      this.browser.close();
       return;
     }
   };
@@ -491,7 +489,7 @@ class Twitter extends Adapter {
     await page.evaluate(() => {
       window.scrollBy(0, window.innerHeight);
     });
-    await page.waitForTimeout(1000); // Adjust the timeout as necessary
+    await page.waitForTimeout(5000); // Adjust the timeout as necessary
   };
 
   /**
