@@ -1,7 +1,7 @@
 # Name and metadata of your task
-task_name: 'Adot Crawler v0.3.3'
+task_name: 'Adot Search AI'
 author: 'Soma'
-description: 'Please try to avoid running this with the Twitter Crawler task at the same time. This task volunteers your Twitter account to crawl twitter to get results. The data are then stored in IPFS and will be used by the Adot to collect the results.'
+description: "This task assists Adot in enhancing their AI-powered search capabilities. By volunteering your Twitter account for data crawling, you contribute to the training of Adot's AI search, thereby significantly improving its performance and accuracy. Note: Your login credentials are only used to establish a session, and will never leave your device. Rewards are calculated based on the amount of time your node remains online. The longer you stay online, the greater the reward you will receive. The base bounty per round is 50 KOII, which will be divided among users who have made submissions in the last round."
 repositoryUrl: 'https://github.com/koii-network/adot-task-main'
 imageUrl: 'imageUrl'
 
@@ -25,7 +25,7 @@ minimum_stake_amount: 1.9
 # total bounty is not accepted in case of update task
 total_bounty_amount: 100
 
-bounty_amount_per_round: 100
+bounty_amount_per_round: 50
 
 #Number of times allowed to re-submit the distribution  list in case the distribution list is audited
 allowed_failed_distributions: 3
@@ -57,7 +57,7 @@ requirementsTags:
 # OPTIONAL variables variables for creating task / REQUIRED variables for update task
 
 # OPTIONAL Only provide the taskId if you are updating the task otherwise leave blank
-task_id: 'A5b3dzrFGZdVGN8g9DQ6gDLjxn7WK3tovJLRmQYH8HGE'
+task_id: 'AgVsieb4BJtkxCXSi4n1HtphSXNJrcYY63mUi6JPmy5x'
 
 # Provide the description for changes made in new version of task
-migrationDescription: 'Release v0.3.3 of the Adot Crawler task. Fix a bug Mac user cannot run the task properly. Also the task is more stable and can get more data in fewer minutes.'
+migrationDescription: 'Release new version of the Adot Crawler task. Update Task title and description. Increase the bounty amount per round to 50.'
