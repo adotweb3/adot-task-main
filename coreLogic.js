@@ -52,7 +52,7 @@ class CoreLogic {
   async generateDistributionList(round, _dummyTaskState) {
     try {
       console.log('GenerateDistributionList called');
-      console.log('I am selected node');
+      // console.log('I am selected node');
 
       // Write the logic to generate the distribution list here by introducing the rules of your choice
 
@@ -72,7 +72,7 @@ class CoreLogic {
         const keys = Object.keys(submissions);
         const values = Object.values(submissions);
         const size = values.length;
-        console.log('Submissions from last round: ', keys, values, size);
+        // console.log('Submissions from last round: ', keys, values, size);
 
         // Logic for slashing the stake of the candidate who has been audited and found to be false
         for (let i = 0; i < size; i++) {
@@ -81,10 +81,10 @@ class CoreLogic {
             submissions_audit_trigger &&
             submissions_audit_trigger[candidatePublicKey]
           ) {
-            console.log(
-              'distributions_audit_trigger votes ',
-              submissions_audit_trigger[candidatePublicKey].votes,
-            );
+            // console.log(
+            //   'distributions_audit_trigger votes ',
+            //   submissions_audit_trigger[candidatePublicKey].votes,
+            // );
             const votes = submissions_audit_trigger[candidatePublicKey].votes;
             if (votes.length === 0) {
               // slash 70% of the stake as still the audit is triggered but no votes are casted
@@ -94,7 +94,7 @@ class CoreLogic {
               const candidateStake = stake_list[candidatePublicKey];
               const slashedStake = candidateStake * 0.7;
               distributionList[candidatePublicKey] = -slashedStake;
-              console.log('Candidate Stake', candidateStake);
+              // console.log('Candidate Stake', candidateStake);
             } else {
               let numOfVotes = 0;
               for (let index = 0; index < votes.length; index++) {
@@ -110,7 +110,7 @@ class CoreLogic {
                 const candidateStake = stake_list[candidatePublicKey];
                 const slashedStake = candidateStake * 0.7;
                 distributionList[candidatePublicKey] = -slashedStake;
-                console.log('Candidate Stake', candidateStake);
+                // console.log('Candidate Stake', candidateStake);
               }
 
               if (numOfVotes > 0) {
@@ -130,11 +130,11 @@ class CoreLogic {
         taskAccountDataJSON.bounty_amount_per_round /
         distributionCandidates.length,
       );
-      console.log('REWARD RECEIVED BY EACH NODE', reward);
+      // console.log('REWARD RECEIVED BY EACH NODE', reward);
       for (let i = 0; i < distributionCandidates.length; i++) {
         distributionList[distributionCandidates[i]] = reward;
       }
-      console.log('Distribution List', distributionList);
+      // console.log('Distribution List', distributionList);
       return distributionList;
     } catch (err) {
       console.log('ERROR IN GENERATING DISTRIBUTION LIST', err);
@@ -162,12 +162,12 @@ class CoreLogic {
         distributionList,
         round,
       );
-      console.log('DECIDER', decider);
+      // console.log('DECIDER', decider);
 
       if (decider) {
         const response =
           await namespaceWrapper.distributionListSubmissionOnChain(round);
-        console.log('RESPONSE FROM DISTRIBUTION LIST', response);
+        // console.log('RESPONSE FROM DISTRIBUTION LIST', response);
       }
     } catch (err) {
       console.log('ERROR IN SUBMIT DISTRIBUTION', err);
@@ -275,7 +275,7 @@ class CoreLogic {
   async submitTask(roundNumber) {
     console.log('submitTask called with round', roundNumber);
     try {
-      console.log('inside try');
+      // console.log('inside try');
       console.log(
         await namespaceWrapper.getSlot(),
         'current slot while calling submit',
