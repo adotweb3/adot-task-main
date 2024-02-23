@@ -12,10 +12,10 @@ task_executable_network: 'IPFS'
 task_audit_program: 'dist/main.js'
 
 # Total round time of your task : it must be given in slots and each slot is roughly equal to 408ms
-round_time: 1500
+round_time: 2000
 
-audit_window: 350
-submission_window: 350
+audit_window: 500
+submission_window: 500
 
 # Amounts in KOII
 
@@ -23,7 +23,7 @@ minimum_stake_amount: 1.9
 
 # total_bounty_amount cannot be grater than bounty_amount_per_round
 # total bounty is not accepted in case of update task
-total_bounty_amount: 100
+total_bounty_amount: 1000
 
 bounty_amount_per_round: 50
 
@@ -57,7 +57,7 @@ requirementsTags:
 # OPTIONAL variables variables for creating task / REQUIRED variables for update task
 
 # OPTIONAL Only provide the taskId if you are updating the task otherwise leave blank
-task_id: 'AgVsieb4BJtkxCXSi4n1HtphSXNJrcYY63mUi6JPmy5x'
+task_id: '5hoMYrrdPQneqsQyRGzmoHvKEbR5kA1dN6jdUWFnhgVH'
 
 # Provide the description for changes made in new version of task
-migrationDescription: 'Release new version of the Adot Crawler task. Update Task title and description. Increase the bounty amount per round to 50.'
+migrationDescription: 'Release new version of the Adot Crawler task. Update Task title and description. Stable the connect to IPFS.'

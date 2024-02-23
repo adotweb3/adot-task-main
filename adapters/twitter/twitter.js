@@ -116,75 +116,133 @@ class Twitter extends Adapter {
    */
   twitterLogin = async () => {
     try {
-      // console.log('Step: Go to twitter.com');
-      // // console.log('isBrowser?', this.browser, 'isPage?', this.page);
-      // await this.page.goto('https://twitter.com');
+      const cookieLoginSuccess = await this.tryLoginWithCookies();
+      if (cookieLoginSuccess) {
+        this.sessionValid = true;
+        return this.sessionValid;
+      } else {
+        console.log('Step: Go to login page');
+        await this.page.goto('https://twitter.com/i/flow/login', {
+          timeout: 60000,
+        });
 
-      console.log('Step: Go to login page');
-      await this.page.goto('https://twitter.com/i/flow/login', {
-        timeout: 60000,
-      });
+        console.log('Step: Fill in username');
+        console.log(this.credentials.username);
 
-      console.log('Step: Fill in username');
-      console.log(this.credentials.username);
-
-      await this.page.waitForSelector('input[autocomplete="username"]', {
-        timeout: 60000,
-      });
-      await this.page.type(
-        'input[autocomplete="username"]',
-        this.credentials.username,
-      );
-      await this.page.keyboard.press('Enter');
-
-      const twitter_verify = await this.page
-        .waitForSelector('input[data-testid="ocfEnterTextTextInput"]', {
-          timeout: 5000,
-          visible: true,
-        })
-        .then(() => true)
-        .catch(() => false);
-
-      if (twitter_verify) {
+        await this.page.waitForSelector('input[autocomplete="username"]', {
+          timeout: 60000,
+        });
         await this.page.type(
-          'input[data-testid="ocfEnterTextTextInput"]',
+          'input[autocomplete="username"]',
           this.credentials.username,
         );
         await this.page.keyboard.press('Enter');
+
+        const twitter_verify = await this.page
+          .waitForSelector('input[data-testid="ocfEnterTextTextInput"]', {
+            timeout: 5000,
+            visible: true,
+          })
+          .then(() => true)
+          .catch(() => false);
+
+        if (twitter_verify) {
+          await this.page.type(
+            'input[data-testid="ocfEnterTextTextInput"]',
+            this.credentials.username,
+          );
+          await this.page.keyboard.press('Enter');
+        }
+
+        console.log('Step: Fill in password');
+        const currentURL = await this.page.url();
+        await this.page.waitForSelector('input[name="password"]');
+        await this.page.type(
+          'input[name="password"]',
+          this.credentials.password,
+        );
+        console.log('Step: Click login button');
+        await this.page.keyboard.press('Enter');
+
+        // TODO - catch unsuccessful login and retry up to query.maxRetry
+        if (!(await this.isPasswordCorrect(this.page, currentURL))) {
+          console.log('Password is incorrect or email verfication needed.');
+          await this.page.waitForTimeout(5000);
+          this.sessionValid = false;
+        } else if (await this.isEmailVerificationRequired(this.page)) {
+          console.log('Email verification required.');
+          this.sessionValid = false;
+          await this.page.waitForTimeout(1000000);
+        } else {
+          console.log('Password is correct.');
+          this.page.waitForNavigation({ waitUntil: 'load' });
+          await this.page.waitForTimeout(5000);
+
+          this.sessionValid = true;
+          this.lastSessionCheck = Date.now();
+
+          console.log('Step: Login successful');
+          // Extract cookies
+          const cookies = await this.page.cookies();
+          // console.log('cookies', cookies);
+          // Save cookies to database
+          await this.saveCookiesToDB(cookies);
+        }
+
+        return this.sessionValid;
       }
-
-      console.log('Step: Fill in password');
-      const currentURL = await this.page.url();
-      await this.page.waitForSelector('input[name="password"]');
-      await this.page.type('input[name="password"]', this.credentials.password);
-      console.log('Step: Click login button');
-      await this.page.keyboard.press('Enter');
-
-      // TODO - catch unsuccessful login and retry up to query.maxRetry
-      if (!(await this.isPasswordCorrect(this.page, currentURL))) {
-        console.log('Password is incorrect or email verfication needed.');
-        await this.page.waitForTimeout(5000);
-        this.sessionValid = false;
-      } else if (await this.isEmailVerificationRequired(this.page)) {
-        console.log('Email verification required.');
-        this.sessionValid = false;
-        await this.page.waitForTimeout(1000000);
-      } else {
-        console.log('Password is correct.');
-        this.page.waitForNavigation({ waitUntil: 'load' });
-        await this.page.waitForTimeout(5000);
-
-        this.sessionValid = true;
-        this.lastSessionCheck = Date.now();
-
-        console.log('Step: Login successful');
-      }
-
-      return this.sessionValid;
     } catch (e) {
       console.log('Error logging in', e);
       this.sessionValid = false;
       return false;
+    }
+  };
+
+  tryLoginWithCookies = async () => {
+    const cookies = await this.db.getCookie();
+    // console.log('cookies', cookies);
+    if (cookies !== null) {
+      await this.page.setCookie(...cookies);
+
+      await this.page.goto('https://twitter.com/home');
+
+      await this.page.waitForTimeout(5000);
+
+      // Replace the selector with a Twitter-specific element that indicates a logged-in state
+      // This is just an example; you'll need to determine the correct selector for your case
+      const isLoggedIn =
+        (await this.page.url()) !==
+        'https://twitter.com/i/flow/login?redirect_after_login=%2Fhome';
+
+      if (isLoggedIn) {
+        console.log('Logged in using existing cookies');
+        console.log('Updating last session check');
+        const cookies = await this.page.cookies();
+        this.saveCookiesToDB(cookies);
+        this.sessionValid = true;
+        // Optionally, refresh or validate cookies here
+      } else {
+        console.log('No valid cookies found, proceeding with manual login');
+        this.sessionValid = false;
+      }
+      return this.sessionValid;
+    } else {
+      console.log('No cookies found');
+      return false;
+    }
+  };
+
+  saveCookiesToDB = async cookies => {
+    try {
+      const data = await this.db.getCookie();
+      // console.log('data', data);
+      if (data) {
+        await this.db.updateCookie({ id: 'cookies', data: cookies });
+      } else {
+        await this.db.createCookie({ id: 'cookies', data: cookies });
+      }
+    } catch (e) {
+      console.log('Error saving cookies to database', e);
     }
   };
 

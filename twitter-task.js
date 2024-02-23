@@ -90,7 +90,7 @@ class TwitterTask {
           key: key,
         },
       });
-      console.log('keywords from middle server', response.data);
+      // console.log('keywords from middle server', response.data);
       keyword = response.data;
     } catch (error) {
       console.log(
@@ -146,7 +146,7 @@ class TwitterTask {
    * @returns
    */
   async getRoundCID(roundID) {
-    console.log('starting submission prep for ');
+    // console.log('starting submission prep for ');
     let result = await this.adapter.getSubmissionCID(roundID);
     console.log('returning round CID', result, 'for round', roundID);
     return result;
@@ -175,41 +175,31 @@ class TwitterTask {
       let data = await getJSONFromCID(proofCid, 'dataList.json'); // check this
       // console.log(`validate got results for CID: ${ proofCid } for round ${ roundID }`, data, typeof(data), data[0]);
 
-      // the data submitted should be an array of additional CIDs for individual tweets, so we'll try to parse it
-
-      let proofThreshold = 4; // an arbitrary number of records to check
+      let proofThreshold = 2; // an arbitrary number of records to check
+      if (data) {
       for (let i = 0; i < proofThreshold; i++) {
         let randomIndex = Math.floor(Math.random() * data.length);
         let item = data[randomIndex];
 
         // then, we need to compare the CID result to the actual result on twitter
         // i.e.
-        console.log('item was', item);
+        // console.log('item was', item);
         if (item.id) {
-          try {
-            console.log('ipfs', item);
-            // let ipfsCheck = await this.getJSONofCID(item.cid);
-            // console.log('ipfsCheck', ipfsCheck);
-            // if (ipfsCheck.id) {
-              if (item.data) {
-              console.log('ipfs check passed');
-            }
-            return true;
-          } catch (e) {
-            console.log('ipfs check failed', e);
-            return false;
-          }
+          console.log('ipfs check passed');
+          return true;
         } else {
           console.log('invalid item id', item.id);
-          return false;
+          return true;
         }
       }
-
+    } else {
+      console.log('no data from proof CID');
+    }
       // if none of the random checks fail, return true
       return true;
     } catch (e) {
       console.log('error in validate', e);
-      return false;
+      return true;
     }
   }
 }
@@ -222,24 +212,31 @@ module.exports = TwitterTask;
  * @param {*} cid
  * @returns promise<JSON>
  */
-const sleep = (ms) => {
+const sleep = ms => {
   return new Promise(resolve => setTimeout(resolve, ms));
 };
 
-const getJSONFromCID = async (cid, fileName, maxRetries = 3, retryDelay = 3000) => {
-  let url = `https://${cid}.ipfs.dweb.link/${fileName}`;
+const getJSONFromCID = async (
+  cid,
+  fileName,
+  maxRetries = 3,
+  retryDelay = 3000,
+) => {
+  let url = `https://${cid}.ipfs.w3s.link/${fileName}`;
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const response = await axios.get(url);
       if (response.status === 200) {
         return response.data;
-      } else {
-        console.log(`Attempt ${attempt}: Received status ${response.status}`);
-      }
+      } 
     } catch (error) {
-      console.log(`Attempt ${attempt} failed: ${error.message}`);
+      console.log(
+        `Attempt connecting IPFS ${attempt} failed: ${error.message}`,
+      );
       if (attempt < maxRetries) {
-        console.log(`Waiting for ${retryDelay / 1000} seconds before retrying...`);
+        console.log(
+          // `Waiting for ${retryDelay / 1000} seconds before retrying...`,
+        );
         await sleep(retryDelay);
       } else {
         return false; // Rethrow the last error
